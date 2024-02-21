@@ -5,5 +5,5 @@ thetundra: main.go
 install:
 	@go install github.com/xavier2910/tundragame@latest
 
-clean:
-	@rm -rf build
+clean: thetundra
+	@rm -f thetundra
