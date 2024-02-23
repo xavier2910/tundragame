@@ -1,6 +1,6 @@
 thetundra: main.go
 	@go mod tidy
-	@go build -o $@ main.go
+	@go build -o $@
 
 install:
 	@go install github.com/xavier2910/tundragame@latest

@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# make-built binary
+thetundra
