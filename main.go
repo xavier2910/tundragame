@@ -8,17 +8,18 @@ import (
 
 	"github.com/xavier2910/tundra"
 	"github.com/xavier2910/tundra/commandprocessors"
+	"github.com/xavier2910/tundragame/internal/logger"
 	"github.com/xavier2910/tundragame/internal/story"
 )
 
 func main() {
 	fmt.Printf("The Tundra, take 2, version 0.0.0.\n\"bye\" exits\n")
-	//mustOpenLogFile()
 	p := &player{
 		input: *bufio.NewReader(os.Stdin),
 	}
 	err := p.play()
 	if err != nil {
+		logger.Log(fmt.Errorf("FATAL %s", err))
 		log.Fatal(err)
 	}
 }
@@ -29,12 +30,16 @@ type player struct {
 
 func (p *player) play() error {
 
+	defer logger.Close()
+
 	story.MustInitGameData()
 	cp := commandprocessors.NewTurnBased(story.GameData)
 	story.MustCreateCommands(cp)
 	story.MustConnectLocations(cp)
 	cp.UpdateContext()
+
 	fmt.Printf("\n# %s\n\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Description)
+
 	gameOver := false
 	for !gameOver {
 
@@ -48,9 +53,12 @@ func (p *player) play() error {
 		if command == "bye\n" {
 			return nil
 		}
-		result, _ := cp.Execute(command)
+		result, err := cp.Execute(command)
 
 		gameOver = p.display(result)
+		if err != nil {
+			logger.Log(err)
+		}
 
 	}
 

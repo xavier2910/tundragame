@@ -1,4 +1,4 @@
-thetundra: main.go internal/story/story.go
+thetundra: main.go internal/story/story.go internal/logger/logger.go
 	@go mod tidy
 	@go build -o $@
 
