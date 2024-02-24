@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/xavier2910/tundra"
 	"github.com/xavier2910/tundra/commandprocessors"
@@ -10,42 +12,62 @@ import (
 )
 
 func main() {
-	fmt.Printf("The Tundra, take 2, version 0.0.0.\nNothing implemented yet\n")
-	story.MustInitGameData()
+	fmt.Printf("The Tundra, take 2, version 0.0.0.\n\"bye\" exits\n")
 	//mustOpenLogFile()
-	err := play()
+	p := &player{
+		input: *bufio.NewReader(os.Stdin),
+	}
+	err := p.play()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func play() error {
+type player struct {
+	input bufio.Reader
+}
 
+func (p *player) play() error {
+
+	story.MustInitGameData()
 	cp := commandprocessors.NewTurnBased(story.GameData)
-	fmt.Printf("\n%s\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Description)
-
+	story.MustCreateCommands(cp)
+	story.MustConnectLocations(cp)
+	cp.UpdateContext()
+	fmt.Printf("\n# %s\n\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Description)
 	gameOver := false
 	for !gameOver {
 
-		command := getInput()
+		command, err := p.getInput()
+		if err != nil {
+			return err
+		}
+		if command == "\n" {
+			continue
+		}
+		if command == "bye\n" {
+			return nil
+		}
 		result, _ := cp.Execute(command)
 
-		gameOver = display(result)
+		gameOver = p.display(result)
 
 	}
 
 	return nil
 }
 
-func getInput() (command string) {
+func (p *player) getInput() (command string, err error) {
 	fmt.Print("> ")
 
-	fmt.Scanln(&command)
-
-	return command
+	command, err = p.input.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return
 }
 
-func display(results tundra.CommandResults) (gameEnded bool) {
+func (p *player) display(results tundra.CommandResults) (gameEnded bool) {
 	switch results.Result {
 	case tundra.Ok:
 		fmt.Printf("\n%s\n", results.Msg[0])
@@ -53,7 +75,7 @@ func display(results tundra.CommandResults) (gameEnded bool) {
 	case tundra.Expo:
 		for _, msg := range results.Msg {
 			fmt.Printf("\n%s\n\npress enter to continue . . . ", msg)
-			getInput()
+			p.pause()
 		}
 	case tundra.Death:
 		fmt.Printf("\n%s\n\nYou have died. The end.\n", results.Msg[0])
@@ -65,4 +87,8 @@ func display(results tundra.CommandResults) (gameEnded bool) {
 	}
 
 	return
+}
+
+func (p *player) pause() {
+	p.input.ReadRune()
 }
