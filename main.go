@@ -6,11 +6,12 @@ import (
 
 	"github.com/xavier2910/tundra"
 	"github.com/xavier2910/tundra/commandprocessors"
+	"github.com/xavier2910/tundragame/internal/story"
 )
 
 func main() {
 	fmt.Printf("The Tundra, take 2, version 0.0.0.\nNothing implemented yet\n")
-	mustInitWorld()
+	story.MustInitGameData()
 	//mustOpenLogFile()
 	err := play()
 	if err != nil {
@@ -20,8 +21,8 @@ func main() {
 
 func play() error {
 
-	cp := commandprocessors.NewTurnBased(theworld)
-	fmt.Printf("\n%s\n%s\n", theworld.PlayerData.CurLoc.Title, theworld.PlayerData.CurLoc.Description)
+	cp := commandprocessors.NewTurnBased(story.GameData)
+	fmt.Printf("\n%s\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Description)
 
 	gameOver := false
 	for !gameOver {
