@@ -111,11 +111,11 @@ func MustInitGameData() {
 		}, nil
 
 	})
-	penny.AddCommand("take", take("penny", penny))
-	penny.AddCommand("drop", drop("penny", penny))
+	penny.AddCommand("take", commands.Take("penny", penny, GameData))
+	penny.AddCommand("drop", commands.Drop("penny", penny, GameData))
 	chair.AddCommand("examine", commands.Examine(chair))
-	chair.AddCommand("take", take("chair", chair))
-	chair.AddCommand("drop", drop("chair", chair))
+	chair.AddCommand("take", commands.Take("chair", chair, GameData))
+	chair.AddCommand("drop", commands.Drop("chair", chair, GameData))
 	fireplace.AddCommand("examine", commands.Examine(fireplace))
 	lamp.AddCommand("light", func(o []*tundra.Object) (tundra.CommandResults, error) {
 		if lampOn {
@@ -143,7 +143,8 @@ func MustInitGameData() {
 			Msg:    []string{"You turn the lamp off. It still has enough oil to last for quite a while."},
 		}, nil
 	})
-	lamp.AddCommand("take", take("lamp", lamp))
+	lamp.AddCommand("take", commands.Take("lamp", lamp, GameData))
+	lamp.AddCommand("drop", commands.Drop("lamp", lamp, GameData))
 	lamp.AddCommand("examine", func(o []*tundra.Object) (tundra.CommandResults, error) {
 		var msg string
 		if lampOn {
@@ -267,58 +268,4 @@ func MustConnectLocations(cp tundra.CommandProcessor) {
 	hookUpinforestTo(tundra.West, GameData.Places[3])
 	//to house
 	hookUpinforestTo(tundra.South, GameData.Places[5])
-}
-
-func take(name string, obj *tundra.Object) tundra.Command {
-	return func(o []*tundra.Object) (tundra.CommandResults, error) {
-		if GameData.PlayerData.Inventory[name] != nil {
-			return tundra.CommandResults{
-				Result: tundra.Ok,
-				Msg: []string{
-					fmt.Sprintf("You already have the %s.", name),
-				},
-			}, nil
-		}
-		if GameData.PlayerData.CurLoc.GetObject(name) == nil {
-			return tundra.CommandResults{
-				Result: tundra.Ok,
-				Msg: []string{
-					fmt.Sprintf("You already have the %s, or the %s has ceased to exist.", name, name),
-				},
-			}, fmt.Errorf("object \"%s\": %#v is nil at location %#v", name, obj, GameData.PlayerData.CurLoc)
-		}
-		GameData.PlayerData.CurLoc.RemoveObject(name)
-		GameData.PlayerData.AddObject(name, obj)
-		return tundra.CommandResults{
-			Result: tundra.Ok,
-			Msg:    []string{fmt.Sprintf("%s taken.", name)},
-		}, nil
-	}
-}
-
-func drop(name string, obj *tundra.Object) tundra.Command {
-	return func(o []*tundra.Object) (tundra.CommandResults, error) {
-		if GameData.PlayerData.Inventory[name] == nil {
-			return tundra.CommandResults{
-				Result: tundra.Ok,
-				Msg: []string{
-					fmt.Sprintf("You don't have a %s.", name),
-				},
-			}, nil
-		}
-		if GameData.PlayerData.CurLoc.GetObject(name) != nil {
-			return tundra.CommandResults{
-				Result: tundra.Ok,
-				Msg: []string{
-					fmt.Sprintf("There is already a %s here.", name),
-				},
-			}, fmt.Errorf("duplicate object \"%s\" at location %#v", name, GameData.PlayerData.CurLoc)
-		}
-		GameData.PlayerData.CurLoc.AddObject(name, obj)
-		GameData.PlayerData.RemoveObject(name)
-		return tundra.CommandResults{
-			Result: tundra.Ok,
-			Msg:    []string{fmt.Sprintf("%s dropped.", name)},
-		}, nil
-	}
 }
