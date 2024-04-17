@@ -256,7 +256,8 @@ func MustConnectLocations(cp tundra.CommandProcessor) {
 				}, nil
 			}
 		})
-		GameData.Places[7]. /*inforest*/ Objects[string(direction)] = conn
+		// inforest
+		GameData.Places[7].Objects[string(direction)] = conn
 	}
 	//to nearforest
 	hookUpinforestTo(tundra.North, GameData.Places[2])
