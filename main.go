@@ -38,7 +38,7 @@ func (p *player) play() error {
 	story.MustConnectLocations(cp)
 	cp.UpdateContext()
 
-	fmt.Printf("\n# %s\n\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Description)
+	fmt.Printf("\n# %s\n\n%s\n", story.GameData.PlayerData.CurLoc.Title, story.GameData.PlayerData.CurLoc.Describe())
 
 	gameOver := false
 	for !gameOver {

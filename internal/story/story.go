@@ -148,9 +148,9 @@ func MustInitGameData() {
 	lamp.AddCommand("examine", func(o []*tundra.Object) (tundra.CommandResults, error) {
 		var msg string
 		if lampOn {
-			msg = fmt.Sprintf("%s. The lamp is on.", lamp.Description)
+			msg = fmt.Sprintf("%s The lamp is on.", lamp.Description)
 		} else {
-			msg = fmt.Sprintf("%s. The lamp is off.", lamp.Description)
+			msg = fmt.Sprintf("%s The lamp is off.", lamp.Description)
 		}
 		return tundra.CommandResults{
 			Result: 0,
