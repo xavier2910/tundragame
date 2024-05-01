@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	fmt.Printf("The Tundra, take 2, version 0.0.0.\n\"bye\" exits\n")
+	fmt.Printf("The Tundra, take 2, version 0.0.0.\n by Xavier\n\n\"bye\" exits\n")
 	p := &player{
 		input: *bufio.NewReader(os.Stdin),
 	}
