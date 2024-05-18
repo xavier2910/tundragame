@@ -71,7 +71,7 @@ func MustInitGameData() {
 	}
 	inforest := &tundra.Location{
 		Title:       "In Forest",
-		Description: "The forest surrounding you is very dark",
+		Description: "The forest surrounding you is very dark.",
 		Objects:     map[string]*tundra.Object{},
 		Commands:    map[string]tundra.Command{},
 	}
