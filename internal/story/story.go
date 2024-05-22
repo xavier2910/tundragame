@@ -15,6 +15,7 @@ var (
 
 func MustInitGameData() {
 
+	///////////////////////////////ICY PLANET///////////////////////////////////////////////
 	start := &tundra.Location{
 		Title:       "Near Cave",
 		Description: "You are looking into the mouth of a dark cave in the side of a tall, icy cliff to the immediate east. Surrounding you is a tundra so open you can even see your hand in front of your face.",
@@ -75,6 +76,27 @@ func MustInitGameData() {
 		Objects:     map[string]*tundra.Object{},
 		Commands:    map[string]tundra.Command{},
 	}
+	//cave depths
+	ladder := tundra.NewObject(tundra.WithDescription("The ladder is made of steel loops directly embedded in the stone"))
+	hatch := tundra.NewObject(tundra.WithDescription("The door is round, with one of those submarine screwy things for a handle."))
+	tjoint := &tundra.Location{
+		Title:       "Vertical Tunnel",
+		Description: "You are hanging on to a metal ladder in a dark, vertical stone tunnel. A faint grey light shows the top of the tunnel, but down is only darkness.",
+		Objects: map[string]*tundra.Object{
+			"ladder": ladder,
+			"door":   hatch,
+		},
+		Commands: map[string]tundra.Command{},
+	}
+	button := tundra.NewObject(tundra.WithDescription("The button is very shiny, and bears the sigil: '->'"))
+	telroom := &tundra.Location{
+		Title:       "Teleporter Room",
+		Description: "You are standing at the bottom of a steel ladder in a dark room illuminated by a brilliant circle of glowing blue.",
+		Objects: map[string]*tundra.Object{
+			"button": button,
+		},
+		Commands: map[string]tundra.Command{},
+	}
 
 	GameData = tundra.NewWorld(
 		tundra.NewPlayer(
@@ -91,6 +113,8 @@ func MustInitGameData() {
 			house,
 			inhouse,
 			inforest,
+			tjoint,
+			telroom,
 		},
 	)
 
