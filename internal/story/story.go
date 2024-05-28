@@ -10,7 +10,9 @@ import (
 
 var GameData *tundra.World
 var (
-	lampOn = false
+	//////////////////////////////STATE FOR ICY PLANET//////////////////////////
+	lampOn    = false
+	hatchOpen = false
 )
 
 func MustInitGameData() {
@@ -22,10 +24,8 @@ func MustInitGameData() {
 		Objects:     map[string]*tundra.Object{},
 		Commands:    map[string]tundra.Command{},
 	}
-
 	penny := tundra.NewObject(tundra.WithDescription("The penny is very shiny indeed, but it has no face."))
 	chair := tundra.NewObject(tundra.WithDescription("This chair appears to be made out of gold."))
-
 	incave := &tundra.Location{
 		Title:       "In Cave",
 		Description: "You are standing in a very dark cave. You can barely make out a sloping upward passage to the west. In the middle of the room is a round hole with a ladder in it.",
@@ -97,6 +97,20 @@ func MustInitGameData() {
 		},
 		Commands: map[string]tundra.Command{},
 	}
+	weprack := tundra.NewObject()
+	laser := tundra.NewObject(tundra.WithDescription("The laser is in a pistol form. It has all pertaining input devices."))
+	cavestor := &tundra.Location{
+		Title:       "Storage Room",
+		Description: "You are standing in a small storage room. A row of large tanks, sort of like huge propane tanks, lines one wall. On the other is a weapons rack.",
+		Objects: map[string]*tundra.Object{
+			"rack": weprack,
+			"door": hatch,
+		},
+		Commands: map[string]tundra.Command{},
+	}
+
+	////////////////////////////PC-b1///////////////////////
+	hangar := /*todo*/ &tundra.Location{}
 
 	GameData = tundra.NewWorld(
 		tundra.NewPlayer(
@@ -105,19 +119,23 @@ func MustInitGameData() {
 			tundra.WithStartingInventory(map[string]*tundra.Object{}),
 		),
 		[]*tundra.Location{
-			start,
+			start, //0
 			incave,
 			nearforest,
 			overcave,
 			westnearforest,
-			house,
+			house, //5
 			inhouse,
 			inforest,
 			tjoint,
 			telroom,
+			cavestor, //10
+
+			hangar, //dummy
 		},
 	)
 
+	////////////////////////////// COMMANDS FOR ICY PLANET  ////////////////////////////////////////
 	penny.AddCommand("examine", commands.Examine(penny))
 	penny.AddCommand("flip", func(o []*tundra.Object) (tundra.CommandResults, error) {
 		flip := rand.Intn(2) != 0
@@ -133,7 +151,6 @@ func MustInitGameData() {
 				fmt.Sprintf("The only way you can tell which way the coin lands by it's tails side. The coin is %s.", msg),
 			},
 		}, nil
-
 	})
 	penny.AddCommand("take", commands.Take("penny", penny, GameData))
 	penny.AddCommand("drop", commands.Drop("penny", penny, GameData))
@@ -181,6 +198,46 @@ func MustInitGameData() {
 			Msg:    []string{msg},
 		}, nil
 	})
+	ladder.AddCommand("examine", commands.Examine(ladder))
+	hatch.AddCommand("examine", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		var msg string
+		if hatchOpen {
+			msg = fmt.Sprintf("%s The hatch is open.", hatch.Description)
+		} else {
+			msg = fmt.Sprintf("%s The hatch is closed.", hatch.Description)
+		}
+		return tundra.CommandResults{
+			Result: tundra.Ok,
+			Msg:    []string{msg},
+		}, nil
+	})
+	button.AddCommand("examine", commands.Examine(button))
+	weprack.AddObject("laser", laser)
+	laser.AddCommand("examine", commands.Examine(laser))
+	laser.AddCommand("take", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		//attempt a standard take. if that fails, try to do a from weprack take
+		//no promises for a hot take
+		//or for decent puns...
+		res, err := commands.Take("laser", laser, GameData)(o)
+		if err != nil {
+			if weprack.GetObject("laser") == nil {
+				return tundra.CommandResults{
+					Result: tundra.Ok,
+					Msg:    []string{"Oops, it appears the laser is inaccessable. You may have already grabbed it, but the command processor hasn't figured out it's gone...."},
+				}, fmt.Errorf("laser on weprack is nil")
+			}
+			weprack.RemoveObject("laser")
+			GameData.PlayerData.AddObject("laser", laser)
+			return tundra.CommandResults{
+				Result: tundra.Ok,
+				Msg:    []string{"laser taken."},
+			}, nil
+		} else {
+			return res, err
+		}
+	})
+	laser.AddCommand("drop", commands.Drop("laser", laser, GameData))
+
 }
 
 func MustCreateCommands(cp tundra.CommandProcessor) {
@@ -191,7 +248,6 @@ func MustCreateCommands(cp tundra.CommandProcessor) {
 				Msg:    []string{"You aren't holding anything."},
 			}, nil
 		}
-
 		var list string
 		for name, obj := range GameData.PlayerData.Inventory {
 			list = fmt.Sprintf("%s\n%s", list, name)
@@ -202,9 +258,69 @@ func MustCreateCommands(cp tundra.CommandProcessor) {
 			Msg:    []string{fmt.Sprintf("You are holding:%s", list)},
 		}, nil
 	})
+	GameData.Places[8].GetObject("door").AddCommand("open", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		if hatchOpen {
+			return tundra.CommandResults{
+				Result: tundra.Ok,
+				Msg:    []string{"The hatch is already open. Therefore, you cannot open it. (If you ever do manage to open an already open door, shoot me an email so I can fix the game.)"},
+			}, nil
+		}
+		GameData.Places[8].SetConnection(tundra.In, GameData.Places[10], GameData.PlayerData, cp)
+		GameData.Places[10].SetConnection(tundra.Out, GameData.Places[8], GameData.PlayerData, cp)
+		cp.UpdateContext()
+		hatchOpen = true
+		return tundra.CommandResults{
+			Result: tundra.Ok,
+			Msg:    []string{"You twist the steering-wheel-esque handle and open the heavy, but smoothly greased hatch."},
+		}, nil
+	})
+	GameData.Places[8].GetObject("door").AddCommand("close", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		if !hatchOpen {
+			return tundra.CommandResults{
+				Result: tundra.Ok,
+				Msg:    []string{"The hatch is already closed. Therefore, you cannot close it. (If you ever do manage to close an already closed door, shoot me an email so I can fix the game.)"},
+			}, nil
+		}
+		GameData.Places[8].RemoveConnection(tundra.In)
+		GameData.Places[10].RemoveConnection(tundra.Out)
+		cp.UpdateContext()
+		hatchOpen = false
+		return tundra.CommandResults{
+			Result: tundra.Ok,
+			Msg:    []string{"The hatch swings heavily closed. You screw the handle to secure it."},
+		}, nil
+	})
+	weprack := GameData.Places[10].GetObject("rack")
+	weprack.AddCommand("examine", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		var msg string
+		if weprack.GetObject("laser") != nil {
+			msg = fmt.Sprintf("%s There is a solitary laser pistol hanging on the rack.", weprack.Description)
+			cp.InjectContext("laser", weprack.GetObject("laser"))
+			cp.InjectContext("pistol", weprack.GetObject("laser"))
+		} else {
+			msg = fmt.Sprintf("%s The rack is empty.", weprack.Description)
+		}
+		return tundra.CommandResults{
+			Result: tundra.Ok,
+			Msg:    []string{msg},
+		}, nil
+	})
+	GameData.Places[9].GetObject("button").AddCommand("push", func(o []*tundra.Object) (tundra.CommandResults, error) {
+		GameData.PlayerData.CurLoc = GameData.Places[11]
+		cp.UpdateContext()
+		return tundra.CommandResults{
+			Result: tundra.Expo,
+			Msg: []string{
+				"You press the button, and immediately you are violently sucked forward in a brilliant flash of light.",
+				"You hear a slightly fake-sounding voice say:\n\t\"We thank you for bravely volunteering to save our humble planet and, perhaps, indeed, quite likely, all of humanity. A force of an alien faction is rapidly approaching this planet in order to destroy it. If you cannot save us, we will be forced to warp space to hide the earth from the universe. But that would mean the interruption of trade and the starvation of many. Therefore, we are sending you into one of their central facilities to destroy their fleet or stop them by any other way. The fate of humanity is in your hands. Good luck.",
+				"You are sucked forward in another blinding flash of light.",
+			},
+		}, nil
+	})
 }
 
 func MustConnectLocations(cp tundra.CommandProcessor) {
+	/////////////////////////ICY PLANET////////////////////////
 	//start to incave
 	GameData.Places[0].SetConnection(tundra.East, GameData.Places[1], GameData.PlayerData, cp)
 	GameData.Places[0].SetConnection(tundra.In, GameData.Places[1], GameData.PlayerData, cp)
@@ -261,7 +377,6 @@ func MustConnectLocations(cp tundra.CommandProcessor) {
 	GameData.Places[3].SetConnection(tundra.East, GameData.Places[7], GameData.PlayerData, cp)
 	GameData.Places[3].SetConnection(tundra.Northeast, GameData.Places[7], GameData.PlayerData, cp)
 	GameData.Places[3].SetConnection(tundra.Southeast, GameData.Places[7], GameData.PlayerData, cp)
-
 	// now we allow the player to go various places from in the forest if they have the lamp and it's on
 	// but if they don't have the lamp or it's off, they get eaten by a wild beast.
 	hookUpinforestTo := func(direction tundra.Direction, other *tundra.Location) {
@@ -292,4 +407,14 @@ func MustConnectLocations(cp tundra.CommandProcessor) {
 	hookUpinforestTo(tundra.West, GameData.Places[3])
 	//to house
 	hookUpinforestTo(tundra.South, GameData.Places[5])
+	//incave to tjoint
+	GameData.Places[1].SetConnection(tundra.Down, GameData.Places[8], GameData.PlayerData, cp)
+	GameData.Places[1].SetConnection(tundra.In, GameData.Places[8], GameData.PlayerData, cp)
+	//tjoint to incave
+	GameData.Places[8].SetConnection(tundra.Up, GameData.Places[1], GameData.PlayerData, cp)
+	//tjoint to telroom
+	GameData.Places[8].SetConnection(tundra.Down, GameData.Places[9], GameData.PlayerData, cp)
+	//telroom to tjoint
+	GameData.Places[9].SetConnection(tundra.Up, GameData.Places[8], GameData.PlayerData, cp)
+
 }
